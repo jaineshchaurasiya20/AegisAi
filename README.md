@@ -437,3 +437,8 @@ aegis-ai/
 ## 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+
+## Security & Privacy
+
+AegisAI follows a local-first security approach designed to minimize unnecessary data transmission. Security events can be analyzed locally, while remediation actions remain subject to human approval where required.
