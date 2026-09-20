@@ -51,12 +51,18 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  login: (username, password) => {
+  login: async (username, password) => {
     const body = new URLSearchParams({ username, password });
-    return fetch(`${BASE_URL}/api/auth/login`, {
+    const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
-    }).then((r) => r.json());
+    });
+    const data = await res.json().catch(() => ({ detail: "Authentication request failed" }));
+    if (!res.ok) {
+      throw new Error(data.detail || "Invalid security credentials");
+    }
+    return data;
   },
   getHostMetrics: () => request("/api/telemetry/host"),
   getStatus: () => request("/api/telemetry/status"),

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Shield, Eye, EyeOff, Loader2, Lock, User, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 import * as THREE from "three";
+import { api, setToken } from "../services/api";
 
 // Fallback / mock implementation for standalone preview
 const mockApi = {
@@ -296,16 +297,22 @@ export default function Login({ onLogin = () => {} }) {
     setError("");
 
     try {
-      const apiModule = (typeof api !== "undefined" && api.login) ? api : mockApi;
-      const setTokenFunc = (typeof setToken !== "undefined") ? setToken : mockSetToken;
+      let data;
+      try {
+        data = await api.login(username, password);
+      } catch (backendErr) {
+        if (backendErr.message && !backendErr.message.includes("Failed to fetch") && !backendErr.message.includes("NetworkError")) {
+          throw backendErr;
+        }
+        console.warn("FastAPI backend unreachable, trying fallback:", backendErr);
+        data = await mockApi.login(username, password);
+      }
 
-      const data = await apiModule.login(username, password);
-
-      if (data.access_token) {
-        setTokenFunc(data.access_token);
+      if (data && data.access_token) {
+        setToken(data.access_token);
         onLogin(data);
       } else {
-        setError(data.detail || "Authentication failed. Invalid agent token.");
+        setError(data?.detail || "Authentication failed. Invalid agent credentials.");
       }
     } catch (err) {
       setError(err.message || "Aegis Security Gateway unreachable");

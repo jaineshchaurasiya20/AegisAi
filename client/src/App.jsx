@@ -121,18 +121,26 @@ function AppShell() {
 
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
-  const isExplicitLogin = typeof window !== "undefined" && window.location.pathname === "/login";
+  const [showLoginView, setShowLoginView] = useState(
+    () => !getToken() || (typeof window !== "undefined" && window.location.pathname === "/login")
+  );
 
   useEffect(() => {
-    return onUnauthorized(() => setAuthed(false));
+    return onUnauthorized(() => {
+      setAuthed(false);
+      setShowLoginView(true);
+    });
   }, []);
 
-  if (!authed || isExplicitLogin) {
+  if (!authed || showLoginView) {
     return (
       <Login
         onLogin={() => {
           setAuthed(true);
-          if (isExplicitLogin) window.location.href = "/";
+          setShowLoginView(false);
+          if (typeof window !== "undefined" && window.location.pathname === "/login") {
+            window.history.replaceState({}, "", "/");
+          }
         }}
       />
     );
