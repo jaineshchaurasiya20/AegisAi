@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Layers,
@@ -23,15 +23,15 @@ import { useEngine } from "../context/EngineContext";
 import { api } from "../services/api";
 import { aegisWS } from "../services/websocket";
 
-// Geo IP Flag Lookup helper
+// Premium Geo IP Lookup (Removed emojis for a professional enterprise look)
 function getGeoFlag(ip = "") {
-  if (ip.startsWith("185.233") || ip.startsWith("185.")) return { geo: "Netherlands", flag: "🇳🇱" };
-  if (ip.startsWith("45.142") || ip.startsWith("45.")) return { geo: "Russia", flag: "🇷🇺" };
-  if (ip.startsWith("194.26") || ip.startsWith("194.")) return { geo: "Romania", flag: "🇷🇴" };
-  if (ip.startsWith("91.240") || ip.startsWith("91.")) return { geo: "Bulgaria", flag: "🇧🇬" };
-  if (ip.startsWith("103.145") || ip.startsWith("103.")) return { geo: "Vietnam", flag: "🇻🇳" };
-  if (ip.startsWith("192.168") || ip.startsWith("10.") || ip.startsWith("127.")) return { geo: "Local", flag: "🛡️" };
-  return { geo: "External", flag: "🌐" };
+  if (ip.startsWith("185.233") || ip.startsWith("185.")) return { geo: "Netherlands", flag: "NL" };
+  if (ip.startsWith("45.142") || ip.startsWith("45.")) return { geo: "Russia", flag: "RU" };
+  if (ip.startsWith("194.26") || ip.startsWith("194.")) return { geo: "Romania", flag: "RO" };
+  if (ip.startsWith("91.240") || ip.startsWith("91.")) return { geo: "Bulgaria", flag: "BG" };
+  if (ip.startsWith("103.145") || ip.startsWith("103.")) return { geo: "Vietnam", flag: "VN" };
+  if (ip.startsWith("192.168") || ip.startsWith("10.") || ip.startsWith("127.")) return { geo: "Local Network", flag: "INT" };
+  return { geo: "External", flag: "EXT" };
 }
 
 export default function Dashboard() {
@@ -40,6 +40,19 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [liveFeed, setLiveFeed] = useState([]);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const dashboardRef = useRef(null);
+
+  // Load Premium Font dynamically
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+    return () => {
+      if (document.head.contains(link)) document.head.removeChild(link);
+    };
+  }, []);
 
   // Fetch initial live threats and telemetry stats
   const loadData = async () => {
@@ -70,10 +83,8 @@ export default function Dashboard() {
         const item = msg.payload || msg.threat;
         setThreats((prev) => [item, ...prev.filter((t) => t.id !== item.id)]);
 
-        // Refresh stats
         api.getThreatStats().then(setStats).catch(() => {});
 
-        // Prepend to live activity feed
         const newFeedItem = {
           id: `ws-${item.id || Date.now()}`,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
@@ -89,9 +100,17 @@ export default function Dashboard() {
     return unsub;
   }, []);
 
-  // 1. Dynamic Active Incident Hero
+  // Global mouse tracking for premium double-spotlight effect
+  const handleMouseMove = (e) => {
+    if (!dashboardRef.current) return;
+    const rect = dashboardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
   const activeIncident = useMemo(() => {
-    // Find the latest critical/high threat from loaded live data
     const criticalThreat = threats.find((t) => t.severity === "critical" || (t.threat_score || 0) >= 0.85);
     const topThreat = criticalThreat || threats[0];
 
@@ -118,7 +137,6 @@ export default function Dashboard() {
       };
     }
 
-    // Default Fallback anchored to current time
     return {
       id: "0241",
       incident_number: "INCIDENT #0241",
@@ -136,16 +154,13 @@ export default function Dashboard() {
     };
   }, [threats]);
 
-  // 2. Dynamic Attack Timeline Events
   const timelineEvents = useMemo(() => {
     if (threats.length >= 3) {
-      // Build from real threat events
       return threats.slice(0, 4).map((t, idx) => {
         const d = new Date(t.timestamp || Date.now());
         const timeStr = !isNaN(d.getTime())
           ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           : "10:45";
-
         const isBlock = t.action_taken === "process_isolated" || t.action_taken === "trapped_in_honeypot";
         return {
           time: timeStr,
@@ -157,7 +172,6 @@ export default function Dashboard() {
       });
     }
 
-    // Dynamic relative timeline anchored around active threat / current time
     const now = new Date();
     const fmt = (minAgo) => {
       const d = new Date(now.getTime() - minAgo * 60 * 1000);
@@ -196,10 +210,8 @@ export default function Dashboard() {
     ];
   }, [threats, activeIncident]);
 
-  // 3. Dynamic Suspicious Source IPs Table
   const suspiciousIps = useMemo(() => {
     if (threats.length === 0) return null;
-
     const ipMap = {};
     threats.forEach((t) => {
       const ip = t.source_ip || "Unknown";
@@ -239,7 +251,6 @@ export default function Dashboard() {
       }));
   }, [threats]);
 
-  // 4. Activity Feed
   const feedItems = useMemo(() => {
     if (liveFeed.length > 0) return liveFeed;
     if (threats.length > 0) {
@@ -262,14 +273,12 @@ export default function Dashboard() {
     return null;
   }, [liveFeed, threats]);
 
-  // 5. Dynamic KPI metrics
   const totalEvents = stats?.total || (threats.length > 0 ? threats.length : 2348);
   const activeIncidents = stats?.by_severity
     ? (stats.by_severity.critical || 0) + (stats.by_severity.high || 0)
     : 1;
   const blockedCount = threats.filter((t) => t.action_taken === "process_isolated" || t.action_taken === "trapped_in_honeypot" || (t.threat_score || 0) >= 0.85).length || 3;
 
-  // Handle click on "Investigate Incident"
   const handleInvestigate = (incident) => {
     if (incident?.rawThreat) {
       setSelectedThreat(incident.rawThreat);
@@ -290,136 +299,164 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 space-y-6 max-w-[1600px] mx-auto animate-fade-in font-sans">
-      {/* ─── 1. GLOBAL SYSTEM STATUS & CONTEXT ───────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.05]">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-white text-xl sm:text-2xl font-semibold tracking-tight">
-              Command Center
-            </h1>
-            <StatusBadge variant="cyan" dot size="sm">
-              SOC LIVE
-            </StatusBadge>
+    <div 
+      ref={dashboardRef}
+      onMouseMove={handleMouseMove}
+      className="relative min-h-screen bg-gradient-to-br from-[#02040A] via-[#060918] to-[#0A061C] text-slate-200 overflow-hidden selection:bg-cyan-500/30"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
+      {/* Dynamic Background Double Spotlights & Ambient Glows */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-500 ease-out"
+        style={{
+          background: `
+            radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(139, 92, 246, 0.06), transparent 45%),
+            radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(56, 189, 248, 0.04), transparent 50%)
+          `,
+        }}
+      />
+      <div className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full bg-purple-900/10 blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] left-[-15%] w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] rounded-full bg-blue-900/10 blur-[140px] pointer-events-none" />
+
+      {/* Main Content Dashboard */}
+      <div className="relative z-10 p-4 sm:p-6 lg:p-8 space-y-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out">
+        
+        {/* ─── 1. GLOBAL SYSTEM STATUS & CONTEXT ───────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.04] relative">
+          <div className="relative z-10">
+            <div className="flex items-center gap-3.5">
+              <h1 className="text-[1.75rem] font-bold tracking-tight bg-gradient-to-r from-white via-blue-100 to-indigo-300 bg-clip-text text-transparent drop-shadow-sm">
+                Command Center
+              </h1>
+              <div className="relative group cursor-default mt-1">
+                <div className="absolute -inset-1 bg-cyan-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                <StatusBadge variant="cyan" dot size="sm" className="relative backdrop-blur-xl bg-white/[0.03] border-white/[0.08] px-3 py-1 shadow-lg">
+                  SOC LIVE
+                </StatusBadge>
+              </div>
+            </div>
+            <p className="text-slate-400/90 text-[13px] mt-1.5 font-medium tracking-wide">
+              Host Kernel Events & Socket Telemetry Stream
+            </p>
           </div>
-          <p className="text-slate-400 text-xs sm:text-sm mt-0.5 font-normal">
-            Host Kernel Events & Socket Telemetry Stream
-          </p>
+
+          <div className="flex items-center gap-3 flex-wrap relative z-10">
+            <div className="group relative flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[#090C1A]/80 border border-white/[0.05] backdrop-blur-3xl text-[13px] text-slate-300 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.6)] hover:border-indigo-500/30 transition-all duration-500">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+              <span className="text-slate-400">SOC Profile:</span>
+              <span className="text-white font-semibold tracking-wide">Zero-Trust</span>
+            </div>
+
+            <Link
+              to="/settings"
+              className="group relative flex items-center gap-2.5 px-4 py-2 rounded-xl bg-gradient-to-b from-[#090C1A]/90 to-[#050711]/90 border border-white/[0.05] backdrop-blur-3xl text-[13px] text-slate-300 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.6)] hover:border-cyan-500/40 transition-all duration-500 active:scale-95"
+            >
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+              <Sliders size={14} className="text-cyan-400 group-hover:rotate-180 transition-transform duration-700 ease-out relative z-10" />
+              <span className="text-slate-400 relative z-10">Containment:</span>
+              <span className="text-cyan-300 font-bold tracking-wider drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] relative z-10">
+                {policy?.containmentMode || "AUTONOMOUS"}
+              </span>
+            </Link>
+          </div>
         </div>
 
-        {/* Operational Context Chips */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-navy-900/80 border border-white/[0.06] text-xs text-slate-300 font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-subtle-pulse" />
-            <span className="text-slate-400">SOC Profile:</span>
-            <span className="text-white font-normal">Autonomous Zero-Trust</span>
+        {/* ─── 2. ACTIVE SECURITY INCIDENT HERO (LIVE & DYNAMIC) ───────────── */}
+        <section aria-label="Active Security Incident" className="relative group rounded-[20px] transition-transform duration-500 hover:scale-[1.005]">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-cyan-500/30 rounded-[22px] blur-md opacity-40 group-hover:opacity-80 transition duration-700"></div>
+          <div className="relative bg-[#080B17]/90 backdrop-blur-3xl border border-white/[0.08] rounded-[20px] shadow-2xl overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <IncidentHero
+              incident={activeIncident}
+              onInvestigate={handleInvestigate}
+            />
+          </div>
+        </section>
+
+        {/* ─── 3. SECURITY METRICS / KPI CARDS (LIVE COUNTERS) ─────────────── */}
+        <section aria-label="Key Performance Indicators" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            { icon: Layers, label: "Total Events (24h)", value: totalEvents, trend: "+142 events in last hour", trendIcon: Activity, accent: "cyan", positive: true },
+            { icon: ShieldAlert, label: "Active Incidents", value: activeIncidents, trend: `${activeIncident.incident_number} active`, trendIcon: Flame, accent: "red", positive: false },
+            { icon: ShieldCheck, label: "Blocked Attacks", value: blockedCount, trend: "100% automated containment", trendIcon: Ban, accent: "emerald", positive: true },
+            { icon: Server, label: "System Uptime", value: 99.8, suffix: "%", decimals: 1, trend: "eBPF engine nominal", trendIcon: CheckCircle2, accent: "blue", positive: true }
+          ].map((metric, idx) => (
+            <div key={idx} className="group relative rounded-2xl transition-all duration-500 hover:-translate-y-1.5">
+              <div className={`absolute -inset-[1px] bg-gradient-to-b from-${metric.accent}-500/40 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition duration-500 blur-sm`}></div>
+              <div className="relative h-full bg-[#0A0D1E]/70 backdrop-blur-2xl border border-white/[0.05] rounded-2xl overflow-hidden shadow-2xl">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                <MetricCard
+                  icon={metric.icon}
+                  label={metric.label}
+                  value={metric.value}
+                  suffix={metric.suffix}
+                  decimals={metric.decimals}
+                  trend={metric.trend}
+                  trendIcon={metric.trendIcon}
+                  trendPositive={metric.positive}
+                  accentColor={metric.accent}
+                />
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* ─── 4. BOTTOM SECTION: BALANCED 2-COLUMN INTELLIGENCE & TELEMETRY ─── */}
+        <section aria-label="Security Intelligence & Activity" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column (Timeline & Telemetry) */}
+          <div className="lg:col-span-7 flex flex-col space-y-6">
+            <div className="group relative rounded-2xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(99,102,241,0.1)]">
+              <div className="absolute -inset-[1px] bg-gradient-to-br from-indigo-500/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition duration-700 blur-md"></div>
+              <div className="relative bg-[#090C1A]/70 backdrop-blur-3xl border border-white/[0.04] rounded-2xl shadow-2xl p-1.5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
+                <AttackTimeline events={timelineEvents} activeThreat={activeIncident.rawThreat} />
+              </div>
+            </div>
+            
+            <div className="group relative rounded-2xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(168,85,247,0.1)]">
+              <div className="absolute -inset-[1px] bg-gradient-to-tl from-purple-500/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition duration-700 blur-md"></div>
+              <div className="relative bg-[#090C1A]/70 backdrop-blur-3xl border border-white/[0.04] rounded-2xl shadow-2xl p-1.5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500/20 to-transparent"></div>
+                <ModelTelemetryCard />
+              </div>
+            </div>
           </div>
 
-          <Link
-            to="/settings"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-900/80 hover:bg-navy-800/80 border border-white/[0.06] hover:border-cyan-500/30 text-xs text-slate-300 transition duration-150"
-          >
-            <Sliders size={12} className="text-cyan-400" />
-            <span className="text-slate-400">Containment:</span>
-            <span className="text-cyan-300 font-medium font-mono">
-              {policy?.containmentMode || "AUTONOMOUS"}
-            </span>
-          </Link>
-        </div>
+          {/* Right Column (IPs & Activity) */}
+          <div className="lg:col-span-5 flex flex-col space-y-6">
+            <div className="group relative rounded-2xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(56,189,248,0.1)]">
+              <div className="absolute -inset-[1px] bg-gradient-to-bl from-blue-500/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition duration-700 blur-md"></div>
+              <div className="relative bg-[#090C1A]/70 backdrop-blur-3xl border border-white/[0.04] rounded-2xl shadow-2xl p-1.5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+                <SuspiciousIpTable
+                  ips={suspiciousIps}
+                  onSelectIp={(ip) => {
+                    const matched = threats.find((t) => t.source_ip === ip);
+                    if (matched) setSelectedThreat(matched);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="group relative rounded-2xl transition-all duration-500 hover:shadow-[0_0_40px_rgba(99,102,241,0.1)]">
+              <div className="absolute -inset-[1px] bg-gradient-to-tr from-indigo-500/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition duration-700 blur-md"></div>
+              <div className="relative bg-[#090C1A]/70 backdrop-blur-3xl border border-white/[0.04] rounded-2xl shadow-2xl p-1.5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
+                <ActivityFeed events={feedItems || undefined} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── INVESTIGATE THREAT DETAIL MODAL (XAI & TELEMETRY) ──────────── */}
+        {selectedThreat && (
+          <ThreatDetailModal
+            threat={selectedThreat}
+            onClose={() => setSelectedThreat(null)}
+          />
+        )}
       </div>
-
-      {/* ─── 2. ACTIVE SECURITY INCIDENT HERO (LIVE & DYNAMIC) ───────────── */}
-      <section aria-label="Active Security Incident">
-        <IncidentHero
-          incident={activeIncident}
-          onInvestigate={handleInvestigate}
-        />
-      </section>
-
-      {/* ─── 3. SECURITY METRICS / KPI CARDS (LIVE COUNTERS) ─────────────── */}
-      <section aria-label="Key Performance Indicators" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Total Events */}
-        <MetricCard
-          icon={Layers}
-          label="Total Events (24h)"
-          value={totalEvents}
-          trend="+142 events in last hour"
-          trendIcon={Activity}
-          trendPositive={true}
-          accentColor="cyan"
-        />
-
-        {/* 2. Active Incidents */}
-        <MetricCard
-          icon={ShieldAlert}
-          label="Active Incidents"
-          value={activeIncidents}
-          trend={`${activeIncident.incident_number} active`}
-          trendIcon={Flame}
-          trendPositive={false}
-          accentColor="red"
-          elevation="l2"
-        />
-
-        {/* 3. Blocked Attacks */}
-        <MetricCard
-          icon={ShieldCheck}
-          label="Blocked Attacks"
-          value={blockedCount}
-          trend="100% automated edge containment"
-          trendIcon={Ban}
-          trendPositive={true}
-          accentColor="emerald"
-        />
-
-        {/* 4. System Uptime */}
-        <MetricCard
-          icon={Server}
-          label="System Uptime"
-          value={99.8}
-          decimals={1}
-          suffix="%"
-          trend="eBPF & ONNX engine nominal"
-          trendIcon={CheckCircle2}
-          trendPositive={true}
-          accentColor="blue"
-        />
-      </section>
-
-      {/* ─── 4. BOTTOM SECTION: BALANCED 2-COLUMN INTELLIGENCE & TELEMETRY ─── */}
-      <section aria-label="Security Intelligence & Activity" className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: Attack Progression & ONNX Runtime Monitor (7-Col Width) */}
-        <div className="lg:col-span-7 flex flex-col space-y-5">
-          <AttackTimeline
-            events={timelineEvents}
-            activeThreat={activeIncident.rawThreat}
-          />
-          <ModelTelemetryCard />
-        </div>
-
-        {/* Right Column: Threat Actors & Real-Time Stream (5-Col Stack) */}
-        <div className="lg:col-span-5 flex flex-col space-y-5">
-          <SuspiciousIpTable
-            ips={suspiciousIps}
-            onSelectIp={(ip) => {
-              const matched = threats.find((t) => t.source_ip === ip);
-              if (matched) setSelectedThreat(matched);
-            }}
-          />
-
-          <ActivityFeed
-            events={feedItems || undefined}
-          />
-        </div>
-      </section>
-
-      {/* ─── INVESTIGATE THREAT DETAIL MODAL (XAI & TELEMETRY) ──────────── */}
-      {selectedThreat && (
-        <ThreatDetailModal
-          threat={selectedThreat}
-          onClose={() => setSelectedThreat(null)}
-        />
-      )}
     </div>
   );
 }
