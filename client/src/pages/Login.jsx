@@ -355,18 +355,20 @@ const innerShieldMat = new THREE.MeshStandardMaterial({
     return () => { window.removeEventListener("resize", resize); cancelAnimationFrame(animId); };
   }, []);
 
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async (e, customUser, customPass) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const userToLogin = customUser !== undefined ? customUser : username;
+    const passToLogin = customPass !== undefined ? customPass : password;
     setLoading(true); setError("");
 
     try {
       let data;
       try {
-        data = await api.login(username, password);
+        data = await api.login(userToLogin, passToLogin);
       } catch (backendErr) {
         if (backendErr.message && !backendErr.message.includes("Failed to fetch") && !backendErr.message.includes("NetworkError")) throw backendErr;
         console.warn("FastAPI backend unreachable, fallback to demo mode:", backendErr);
-        data = await mockApi.login(username, password);
+        data = await mockApi.login(userToLogin, passToLogin);
       }
       if (data && data.access_token) {
         setToken(data.access_token); onLogin(data);
@@ -378,9 +380,17 @@ const innerShieldMat = new THREE.MeshStandardMaterial({
   };
 
   const handleUseDemo = () => {
-    setUsername("admin"); setPassword("aegis2024"); setDemoActive(true);
-    setTimeout(() => { setDemoActive(false); handleSubmit(); }, 450);
+    const demoUser = "admin";
+    const demoPass = "aegis2024";
+    setUsername(demoUser);
+    setPassword(demoPass);
+    setDemoActive(true);
+    setTimeout(() => {
+      setDemoActive(false);
+      handleSubmit(null, demoUser, demoPass);
+    }, 150);
   };
+
 
   return (
     <div onMouseMove={handleGlobalMouseMove} className="relative min-h-screen bg-[#030712] text-slate-100 flex flex-col justify-between overflow-x-hidden select-none" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -442,7 +452,7 @@ const innerShieldMat = new THREE.MeshStandardMaterial({
                   <div>
                     <div className="relative group">
                       <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors ${activeInput === "password" ? "text-cyan-400" : "text-slate-400"}`}><Lock size={15} /></div>
-                      <input id="login-password" type={showPass ? "text" : "password"} value={password} onFocus={() => setActiveInput("password")} onBlur={() => setActiveInput(null)} onChange={(e) => setPassword(e.target.value)} required placeholder="Password" className={`w-full bg-[#050b18]/90 border rounded-xl pl-10 pr-10 py-3 text-white text-xs placeholder-slate-500 focus:outline-none transition-all duration-300 shadow-inner ${activeInput === "password" ? "border-cyan-400 shadow-[0_0_18px_rgba(6,182,212,0.25)] ring-1 ring-cyan-500/40" : "border-slate-800 hover:border-slate-700"} ${demoActive ? "ring-2 ring-cyan-400 bg-cyan-950/30" : ""}`} />
+                      <input id="login-password" type={showPass ? "text" : "password"} value={password} onFocus={() => setActiveInput("password")} onBlur={() => setActiveInput(null)} onChange={(e) => setPassword(e.target.value)} required placeholder="Password (default: aegis2024)" className={`w-full bg-[#050b18]/90 border rounded-xl pl-10 pr-10 py-3 text-white text-xs placeholder-slate-500 focus:outline-none transition-all duration-300 shadow-inner ${activeInput === "password" ? "border-cyan-400 shadow-[0_0_18px_rgba(6,182,212,0.25)] ring-1 ring-cyan-500/40" : "border-slate-800 hover:border-slate-700"} ${demoActive ? "ring-2 ring-cyan-400 bg-cyan-950/30" : ""}`} />
                       <button type="button" onClick={() => setShowPass(!showPass)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition" title={showPass ? "Hide password" : "Show password"}>{showPass ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                     </div>
                   </div>
