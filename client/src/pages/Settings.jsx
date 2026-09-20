@@ -22,6 +22,7 @@ export default function Settings() {
   return (
     <div className="p-4 sm:p-6 lg:p-7 space-y-5 max-w-[1600px] mx-auto animate-fade-in font-sans">
       {/* ── Page Header ──────────────────────────────────────────────── */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.05]">
         <div>
           <div className="flex items-center gap-2.5">
@@ -39,6 +40,7 @@ export default function Settings() {
       </div>
 
       {/* ── Navigation Tabs ──────────────────────────────────────────── */}
+
       <div className="flex border-b border-white/[0.06] gap-1.5 flex-wrap">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -65,6 +67,7 @@ export default function Settings() {
       </div>
 
       {/* ── Tab Content Panels ───────────────────────────────────────── */}
+
       <div className="pt-2">
         {activeTab === "containment" && <PolicySettingsPanel />}
 

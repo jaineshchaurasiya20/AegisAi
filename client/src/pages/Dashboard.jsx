@@ -23,7 +23,7 @@ import { useEngine } from "../context/EngineContext";
 import { api } from "../services/api";
 import { aegisWS } from "../services/websocket";
 
-// Premium Geo IP Lookup (Removed emojis for a professional enterprise look)
+// Premium Geo IP Lookup (Removed emojis)
 function getGeoFlag(ip = "") {
   if (ip.startsWith("185.233") || ip.startsWith("185.")) return { geo: "Netherlands", flag: "NL" };
   if (ip.startsWith("45.142") || ip.startsWith("45.")) return { geo: "Russia", flag: "RU" };

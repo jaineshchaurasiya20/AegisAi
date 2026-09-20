@@ -80,6 +80,7 @@ export default function Login({ onLogin = () => {} }) {
     scene.add(mainGroup);
 
     // ── A. Outer Dark Bluish Shield ─────────────────────────────────────────
+
     const shieldShape = new THREE.Shape();
     const w = 0.5, h = 0.6;
     shieldShape.moveTo(0, h);
@@ -105,7 +106,7 @@ export default function Login({ onLogin = () => {} }) {
     const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
     mainGroup.add(shieldMesh);
 
-    // Glowing Edge for the outer shield
+    // Glowing Edge for outer shield
     const edgesGeo = new THREE.EdgesGeometry(shieldGeo, 24);
     const edgesMat = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 });
     const edgesMesh = new THREE.LineSegments(edgesGeo, edgesMat);
