@@ -121,13 +121,21 @@ function AppShell() {
 
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
+  const isExplicitLogin = typeof window !== "undefined" && window.location.pathname === "/login";
 
   useEffect(() => {
     return onUnauthorized(() => setAuthed(false));
   }, []);
 
-  if (!authed) {
-    return <Login onLogin={() => setAuthed(true)} />;
+  if (!authed || isExplicitLogin) {
+    return (
+      <Login
+        onLogin={() => {
+          setAuthed(true);
+          if (isExplicitLogin) window.location.href = "/";
+        }}
+      />
+    );
   }
 
   return (
