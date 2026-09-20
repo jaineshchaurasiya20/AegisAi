@@ -28,7 +28,9 @@ class TrapLogger:
         self._ensure_dir()
 
     def _ensure_dir(self):
-        """Ensure segregated captures directory exists."""
+
+        """Ensuring segregated captures directory exists."""
+
         try:
             self.output_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
@@ -84,7 +86,7 @@ class TrapLogger:
             except Exception as e:
                 logger.error(f"[HONEYPOT-LOGGER] Failed writing trap capture to disk: {e}")
 
-            # Keep in memory cache for instant API queries
+            # Keeping in memory cache for instant API queries
             self._memory_captures.insert(0, record)
             if len(self._memory_captures) > 200:
                 self._memory_captures.pop()

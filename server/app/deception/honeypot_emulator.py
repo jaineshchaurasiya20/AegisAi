@@ -1,7 +1,6 @@
 """
 AegisAI Honeypot Emulator — Deception-Based Active Defense Engine.
-Dynamically traps zero-day anomalies and unknown intrusion patterns flagged by the
-Isolation Forest detector into isolated synthetic traps (Fake FTP, SSH, Registry, Decoy Files).
+Dynamically traps zero-day anomalies and unknown intrusion patterns flagged by the Isolation Forest detector into isolated synthetic traps (Fake FTP, SSH, Registry, Decoy Files).
 """
 import asyncio
 import hashlib
@@ -127,7 +126,7 @@ class HoneypotEmulator:
 
         return capture_record
 
-    # ── Synthetic Network Protocol Emulators (Async Socket Listeners) ──────────
+    # ── Synthetic Network Protocol Emulators (Async Socket Listeners)──
 
     async def _handle_ftp_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """Asynchronously emulate a fake FTP server session."""
@@ -274,5 +273,5 @@ class HoneypotEmulator:
         logger.info("[HONEYPOT] Synthetic listeners stopped.")
 
 
-# Global singleton emulator
+# The Global singleton emulator
 honeypot_emulator = HoneypotEmulator()

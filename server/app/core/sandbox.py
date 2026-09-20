@@ -225,5 +225,5 @@ class EphemeralMemoryManager:
         }
 
 
-# Global singleton instance
+# The Global singleton instance
 ephemeral_sandbox = EphemeralMemoryManager()
