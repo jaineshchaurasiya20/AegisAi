@@ -2,7 +2,21 @@
  * AegisAI API Client — Axios-free fetch wrapper for REST endpoints.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8000");
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '');
+  }
+  if (typeof window !== "undefined") {
+    if (window.location.host.includes("amplifyapp.com")) {
+      return "https://aegisai-backend-l0zn.onrender.com";
+    }
+    return window.location.origin.replace(/\/+$/, '');
+  }
+  return "https://aegisai-backend-l0zn.onrender.com";
+};
+
+export const BASE_URL = getBaseUrl();
+
 
 let _token = null;
 

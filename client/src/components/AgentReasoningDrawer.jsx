@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Zap, CheckCircle, AlertCircle, Loader2, Download, RefreshCw } from 'lucide-react';
-import { getToken } from '../services/api';
+import { getToken, BASE_URL } from '../services/api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = BASE_URL;
 
 /**
  * AgentReasoningDrawer – Slide-over panel that streams the agentic remediation

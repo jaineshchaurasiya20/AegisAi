@@ -5,8 +5,7 @@
 import React, { useState, useEffect } from "react";
 import LogTable from "./LogTable";
 import { api } from "../services/api";
-
-const WS_URL = import.meta.env.VITE_WS_URL || (typeof window !== "undefined" ? ((window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host) : "ws://localhost:8000");
+import { WS_URL } from "../services/websocket";
 
 export default function ThreatTable({ onRowClick, initialThreats = [] }) {
   const [threats, setThreats] = useState(initialThreats);

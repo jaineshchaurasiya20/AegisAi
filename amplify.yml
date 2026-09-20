@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd client
+        - npm ci
+    build:
+      commands:
+        - echo "VITE_API_URL=https://aegisai-backend-l0zn.onrender.com" >> .env.production
+        - echo "VITE_WS_URL=wss://aegisai-backend-l0zn.onrender.com" >> .env.production
+        - npm run build
+  artifacts:
+    baseDirectory: client/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - client/node_modules/**/*

@@ -8,6 +8,15 @@ Write-Host "`n========================================================" -Foregro
 Write-Host "       AegisAI 2.0 Desktop Executable Builder           " -ForegroundColor Cyan
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
+# Step 0: Stop running AegisAI instances & free port 8000
+Write-Host "[0/3] Stopping any running AegisAI instances to free binary locks and port 8000..." -ForegroundColor Cyan
+Stop-Process -Name AegisAI -Force -ErrorAction SilentlyContinue
+$port8000 = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+if ($port8000) {
+    $port8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+}
+Start-Sleep -Milliseconds 500
+
 # Step 1: Build React Production Frontend
 Write-Host "[1/3] Building React Production Frontend (Vite)..." -ForegroundColor Yellow
 Set-Location "$rootDir\client"
@@ -26,7 +35,7 @@ if (-not (Test-Path $pyinstaller)) {
     $pyinstaller = "pyinstaller"
 }
 
-& $pyinstaller --noconfirm "$rootDir\aegisai.spec"
+& $pyinstaller --noconfirm --clean "$rootDir\aegisai.spec"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[!] PyInstaller build failed!" -ForegroundColor Red
     exit 1

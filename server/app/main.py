@@ -93,14 +93,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow React dev server & local origin
+# CORS — allow React dev server, Amplify deployment & configured origins
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+custom_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+origins = list(dict.fromkeys([
+    "https://main.d2rqrw62mxd6iz.amplifyapp.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    *custom_origins,
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8000", "http://127.0.0.1:8000", "*"],
+    allow_origins=origins if "*" not in origins else ["*"],
+    allow_origin_regex=r"^https:\/\/.*\.amplifyapp\.com$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # REST API Routers
 app.include_router(auth.router)
@@ -191,7 +204,7 @@ if CLIENT_DIST.exists():
         
         index_path = CLIENT_DIST / "index.html"
         if index_path.exists():
-            return FileResponse(index_path)
+            return FileResponse(index_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
         raise HTTPException(status_code=404, detail="Frontend build index.html not found")
 else:
     @app.get("/")
@@ -234,15 +247,21 @@ def start_standalone():
         logger.warning(f"Could not automatically open browser: {e}")
 
     # Launch system tray in main GUI thread
+    controller = None
     try:
         from app.collector.tray_agent import AegisTrayController
         controller = AegisTrayController()
         controller.is_running = True
         controller.run(auto_start_engine=False)
     except Exception as e:
-        logger.info(f"Tray event loop finished or not supported: {e}. Keeping server alive.")
-        while server_thread.is_alive():
-            time.sleep(1.0)
+        logger.info(f"Tray event loop error or not supported: {e}")
+    finally:
+        if controller and controller._stop_monitor.is_set():
+            server.should_exit = True
+            server_thread.join(timeout=3)
+        else:
+            while server_thread.is_alive():
+                time.sleep(1.0)
 
 
 if __name__ == "__main__":

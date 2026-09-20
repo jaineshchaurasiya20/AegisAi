@@ -3,7 +3,25 @@
  * Implements exponential backoff reconnection as per rules.md §4.
  */
 
-const WS_URL = import.meta.env.VITE_WS_URL || (typeof window !== "undefined" ? ((window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host) : "ws://localhost:8000");
+const getWsUrl = () => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL.replace(/\/+$/, '');
+  }
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/^http/, 'ws').replace(/\/+$/, '');
+  }
+  if (typeof window !== "undefined") {
+    if (window.location.host.includes("amplifyapp.com")) {
+      return "wss://aegisai-backend-l0zn.onrender.com";
+    }
+    const proto = window.location.protocol === "https:" ? "wss://" : "ws://";
+    return `${proto}${window.location.host}`;
+  }
+  return "wss://aegisai-backend-l0zn.onrender.com";
+};
+
+export const WS_URL = getWsUrl();
+
 
 class AegisWebSocket {
   constructor() {
