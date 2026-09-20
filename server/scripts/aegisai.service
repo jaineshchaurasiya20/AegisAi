@@ -1,0 +1,19 @@
+[Unit]
+Description=AegisAI 2.0 Edge ML Defense Daemon & Telemetry Service
+After=network.target
+
+[Service]
+Type=simple
+User=%I
+WorkingDirectory=/opt/aegis-ai/server
+ExecStart=/opt/aegis-ai/server/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+# Hardening options
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

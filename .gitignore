@@ -1,0 +1,106 @@
+# ==============================================================================
+# AegisAI Git Ignore Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment & Secrets (NEVER COMMIT)
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+*.cert
+
+# ------------------------------------------------------------------------------
+# 2. Datasets & Raw Traffic Logs (>100MB Push Blockers)
+# ------------------------------------------------------------------------------
+cicids2017/
+*.pcap
+*.pcap_ISCX.csv
+
+# ------------------------------------------------------------------------------
+# 3. Python Virtual Environments & Bytecode
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+server/venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ------------------------------------------------------------------------------
+# 4. Testing, Linting & Coverage
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# ------------------------------------------------------------------------------
+# 5. Runtime Storage, Databases & Quarantined Binaries
+# ------------------------------------------------------------------------------
+*.db
+*.sqlite3
+aegisai.db
+quarantine/
+*.bin
+server/logs/*.log
+server/honeypot/captures/*.json
+!server/honeypot/captures/.gitkeep
+server/app/agents/patches/*
+!server/app/agents/patches/.gitkeep
+
+# ------------------------------------------------------------------------------
+# 6. Node / Frontend Dependencies & Production Bundles
+# ------------------------------------------------------------------------------
+client/node_modules/
+client/dist/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ------------------------------------------------------------------------------
+# 7. Executables & Installers
+# ------------------------------------------------------------------------------
+*.exe
+*.dll
+*.so
+*.dylib
+*.msi
+
+# ------------------------------------------------------------------------------
+# 8. OS & IDE Metadata
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

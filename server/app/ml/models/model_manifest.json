@@ -1,0 +1,43 @@
+{
+  "created_at": "2026-09-01T01:01:00.750853+00:00",
+  "frameworks": {
+    "xgboost": "3.4.1",
+    "scikit_learn": "1.9.0",
+    "onnxruntime": "1.29.0"
+  },
+  "feature_columns": [
+    "Destination Port",
+    "Protocol",
+    "Flow Duration",
+    "Total Fwd Packets",
+    "Total Backward Packets",
+    "Total Length of Fwd Packets",
+    "Total Length of Bwd Packets",
+    "Fwd Packet Length Max",
+    "Fwd Packet Length Min",
+    "Fwd Packet Length Mean",
+    "Bwd Packet Length Max",
+    "Bwd Packet Length Min",
+    "Bwd Packet Length Mean",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Flow IAT Mean",
+    "Flow IAT Std",
+    "Fwd IAT Mean",
+    "Bwd IAT Mean",
+    "Active Mean"
+  ],
+  "feature_count": 20,
+  "dataset_rows": 400000,
+  "benign_samples": 322953,
+  "attack_samples": 77047,
+  "metrics": {
+    "xgb_test_auc": 0.999619,
+    "xgb_test_f1": 0.985952
+  },
+  "artifacts": {
+    "xgboost_classifier": "xgb_threat_model.onnx",
+    "isolation_forest_anomaly": "isolation_forest.onnx"
+  },
+  "quantization": "ONNX Dynamic INT8 quantized with tree ensemble operator preservation"
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+  </defs>
+  <polygon points="32,4 58,13 54,42 32,60 10,42 6,13" fill="url(#shieldGrad)" stroke="url(#glowGrad)" stroke-width="3" stroke-linejoin="round" />
+  <polygon points="32,10 52,17 48,39 32,54 16,39 12,17" fill="#0369A1" opacity="0.6" />
+  <path d="M24,32 L29,38 L42,24" fill="none" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
